@@ -52,3 +52,12 @@ jobs:
           body: "APK lista para instalar en Android. Se instala encima de la versión anterior sin perder datos."
           files: PedidosSalceda-v1.0.${{ github.run_number }}.apk
           make_latest: true
+
+      - name: Publicar APK en la rama "apk"
+        run: |
+          mkdir /tmp/apk && cp "PedidosSalceda-v1.0.${{ github.run_number }}.apk" /tmp/apk/PedidosSalceda.apk
+          cd /tmp/apk
+          git init -q -b apk
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git add PedidosSalceda.apk && git commit -q -m "APK v1.0.${{ github.run_number }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" apk
