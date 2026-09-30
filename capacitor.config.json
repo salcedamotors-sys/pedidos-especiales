@@ -1,0 +1,8 @@
+{
+  "appId": "com.salcedamotors.pedidos",
+  "appName": "Pedidos Salceda",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#2a3138"
+  }
+}

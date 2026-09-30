@@ -1,0 +1,33 @@
+rules_version = '2';
+// Reglas de seguridad de la base de datos de Pedidos Salceda.
+// Se pegan en Firebase → Firestore Database → Reglas → Publicar.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function conSesion() { return request.auth != null; }
+    function esDueno() { return conSesion() && request.auth.token.email == 'salcedamotors@gmail.com'; }
+    function perfil() { return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data; }
+    function activo() {
+      return conSesion()
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+        && perfil().activo == true;
+    }
+    function admin() { return esDueno() || (activo() && perfil().rol == 'admin'); }
+
+    // Colaboradores: todos los activos ven la lista (para mostrar nombres); solo el administrador la cambia.
+    match /usuarios/{uid} {
+      allow read: if activo() || esDueno() || (conSesion() && request.auth.uid == uid);
+      allow create, update, delete: if admin();
+    }
+
+    // Pedidos y fotos de las notas: cualquier colaborador activo los ve, crea y actualiza; solo el administrador borra.
+    match /pedidos/{id} {
+      allow read, create, update: if activo();
+      allow delete: if admin();
+    }
+    match /fotos/{id} {
+      allow read, create, update: if activo();
+      allow delete: if admin();
+    }
+  }
+}

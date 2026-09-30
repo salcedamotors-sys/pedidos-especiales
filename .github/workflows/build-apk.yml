@@ -1,0 +1,54 @@
+name: Construir APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Armar la app
+        run: npm run build
+
+      - name: Copiar la app al proyecto Android
+        run: npx cap sync android
+
+      - name: Compilar APK
+        working-directory: android
+        env:
+          NUMERO_VERSION: ${{ github.run_number }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Nombrar APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk "PedidosSalceda-v1.0.${{ github.run_number }}.apk"
+
+      - name: Guardar como descarga
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Pedidos Salceda v1.0.${{ github.run_number }}
+          body: "APK lista para instalar en Android. Se instala encima de la versión anterior sin perder datos."
+          files: PedidosSalceda-v1.0.${{ github.run_number }}.apk
+          make_latest: true
